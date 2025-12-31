@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Moon, Sun, Plus, Trash2, Clock, AlertCircle, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Sun, Plus, Trash2, Clock, AlertCircle, Calendar, Ban, ThumbsDown } from "lucide-react";
 import PageTransition from "@/components/layout/PageTransition";
 
 const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
-const hours = Array.from({ length: 16 }, (_, i) => i + 6); // 6 AM to 9 PM
 
 interface Task {
   id: number;
@@ -15,38 +14,71 @@ interface Task {
   deadline: string;
 }
 
+type SlotMode = "unavailable" | "preferred";
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [sleepTime, setSleepTime] = useState("23:00");
   const [wakeTime, setWakeTime] = useState("07:00");
-  const [selectedSlots, setSelectedSlots] = useState<Record<string, "unavailable" | "preferred">>({});
+  const [slotMode, setSlotMode] = useState<SlotMode>("unavailable");
+  const [selectedSlots, setSelectedSlots] = useState<Record<string, SlotMode>>({});
   const [tasks, setTasks] = useState<Task[]>([
     { id: 1, name: "مراجعة الرياضيات", hours: 3, urgency: 4, deadline: "" },
   ]);
-  const [newTask, setNewTask] = useState({ name: "", hours: 1, urgency: 3, deadline: "" });
+  const [newTask, setNewTask] = useState({ name: "", hours: 2, urgency: 3, deadline: "" });
+
+  // Calculate hours based on sleep/wake times
+  const { hours, sleepHours } = useMemo(() => {
+    const wakeHour = parseInt(wakeTime.split(":")[0]);
+    const sleepHour = parseInt(sleepTime.split(":")[0]);
+    
+    // Generate all 24 hours
+    const allHours = Array.from({ length: 24 }, (_, i) => i);
+    
+    // Calculate sleep hours
+    const sleepHoursSet = new Set<number>();
+    if (sleepHour > wakeHour) {
+      // Normal case: sleep at 23:00, wake at 07:00
+      for (let h = sleepHour; h < 24; h++) sleepHoursSet.add(h);
+      for (let h = 0; h < wakeHour; h++) sleepHoursSet.add(h);
+    } else {
+      // Edge case: sleep at 02:00, wake at 10:00
+      for (let h = sleepHour; h < wakeHour; h++) sleepHoursSet.add(h);
+    }
+    
+    // Filter to show only awake hours
+    const awakeHours = allHours.filter(h => !sleepHoursSet.has(h));
+    
+    return { hours: awakeHours, sleepHours: sleepHoursSet };
+  }, [sleepTime, wakeTime]);
 
   const toggleSlot = (day: number, hour: number) => {
     const key = `${day}-${hour}`;
     setSelectedSlots((prev) => {
       const current = prev[key];
-      if (!current) return { ...prev, [key]: "unavailable" };
-      if (current === "unavailable") return { ...prev, [key]: "preferred" };
-      const { [key]: _, ...rest } = prev;
-      return rest;
+      if (current === slotMode) {
+        // Remove if clicking same mode
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      }
+      // Set to current mode
+      return { ...prev, [key]: slotMode };
     });
   };
 
   const addTask = () => {
     if (newTask.name.trim()) {
       setTasks([...tasks, { ...newTask, id: Date.now() }]);
-      setNewTask({ name: "", hours: 1, urgency: 3, deadline: "" });
+      setNewTask({ name: "", hours: 2, urgency: 3, deadline: "" });
     }
   };
 
   const removeTask = (id: number) => {
     setTasks(tasks.filter((t) => t.id !== id));
   };
+
+  const hourOptions = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 15, 20];
 
   return (
     <PageTransition>
@@ -119,12 +151,41 @@ const Onboarding = () => {
 
                 {/* Weekly grid */}
                 <div className="glass-card rounded-3xl p-4 mb-6 overflow-x-auto">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-sm text-muted-foreground">اضغط لتحديد:</span>
-                    <span className="flex items-center gap-1 text-xs">
+                  {/* Mode selector */}
+                  <div className="mb-4">
+                    <p className="text-sm text-muted-foreground mb-3">ماذا تريد تحديده؟</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSlotMode("unavailable")}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 ${
+                          slotMode === "unavailable"
+                            ? "bg-destructive/20 text-destructive border-2 border-destructive/50"
+                            : "bg-muted/50 text-muted-foreground border-2 border-transparent hover:bg-muted"
+                        }`}
+                      >
+                        <Ban className="w-4 h-4" />
+                        <span className="font-medium">أوقات غير متاحة</span>
+                      </button>
+                      <button
+                        onClick={() => setSlotMode("preferred")}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all duration-200 ${
+                          slotMode === "preferred"
+                            ? "bg-purple-light text-purple-dark border-2 border-purple-dark/50"
+                            : "bg-muted/50 text-muted-foreground border-2 border-transparent hover:bg-muted"
+                        }`}
+                      >
+                        <ThumbsDown className="w-4 h-4" />
+                        <span className="font-medium">أوقات غير محببة</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
                       <span className="w-3 h-3 rounded bg-destructive/30" /> غير متاح
                     </span>
-                    <span className="flex items-center gap-1 text-xs">
+                    <span className="flex items-center gap-1">
                       <span className="w-3 h-3 rounded bg-purple-light" /> غير مفضل
                     </span>
                   </div>
@@ -166,6 +227,13 @@ const Onboarding = () => {
                       ))}
                     </div>
                   </div>
+
+                  {/* Hours info */}
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground text-center">
+                      الجدول يعرض ساعات الاستيقاظ فقط ({hours.length} ساعة) • من {wakeTime} إلى {sleepTime}
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -195,34 +263,77 @@ const Onboarding = () => {
                       className="input-glass"
                     />
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-medium mb-2">
-                          <Clock className="w-4 h-4 text-primary" />
-                          الساعات التقديرية
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="20"
-                          value={newTask.hours}
-                          onChange={(e) => setNewTask({ ...newTask, hours: parseInt(e.target.value) || 1 })}
-                          className="input-glass"
-                        />
+                    {/* Hours selector - Scroll picker */}
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-medium mb-3">
+                        <Clock className="w-4 h-4 text-primary" />
+                        الساعات التقديرية
+                      </label>
+                      <div className="relative">
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                          {hourOptions.map((h) => (
+                            <motion.button
+                              key={h}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => setNewTask({ ...newTask, hours: h })}
+                              className={`flex-shrink-0 w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all duration-200 ${
+                                newTask.hours === h
+                                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                                  : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                              }`}
+                            >
+                              <span className="text-lg font-bold">{h}</span>
+                              <span className="text-[10px]">ساعة</span>
+                            </motion.button>
+                          ))}
+                        </div>
+                        {/* Fade edges */}
+                        <div className="absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-l from-transparent to-card pointer-events-none" />
+                        <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-r from-transparent to-card pointer-events-none" />
                       </div>
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-medium mb-2">
-                          <AlertCircle className="w-4 h-4 text-secondary" />
-                          الاستعجال (1-5)
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="5"
-                          value={newTask.urgency}
-                          onChange={(e) => setNewTask({ ...newTask, urgency: parseInt(e.target.value) || 1 })}
-                          className="input-glass"
-                        />
+                    </div>
+
+                    {/* Urgency selector - 5 dots */}
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-medium mb-3">
+                        <AlertCircle className="w-4 h-4 text-secondary" />
+                        درجة الاستعجال
+                      </label>
+                      <div className="flex items-center justify-center gap-3">
+                        <span className="text-xs text-muted-foreground">منخفض</span>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <motion.button
+                              key={level}
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => setNewTask({ ...newTask, urgency: level })}
+                              className="relative"
+                            >
+                              <motion.div
+                                animate={{
+                                  scale: newTask.urgency >= level ? 1 : 0.8,
+                                  backgroundColor: newTask.urgency >= level 
+                                    ? `hsl(${340 - (level - 1) * 15} 70% ${70 - (level - 1) * 8}%)`
+                                    : "hsl(var(--muted))"
+                                }}
+                                className={`w-8 h-8 rounded-full transition-all duration-200 ${
+                                  newTask.urgency >= level 
+                                    ? "shadow-md" 
+                                    : ""
+                                }`}
+                              />
+                              {newTask.urgency === level && (
+                                <motion.div
+                                  layoutId="urgencyIndicator"
+                                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground"
+                                />
+                              )}
+                            </motion.button>
+                          ))}
+                        </div>
+                        <span className="text-xs text-muted-foreground">عالي</span>
                       </div>
                     </div>
 
@@ -267,7 +378,7 @@ const Onboarding = () => {
                               {Array.from({ length: 5 }).map((_, i) => (
                                 <span
                                   key={i}
-                                  className={`w-1.5 h-1.5 rounded-full ${
+                                  className={`w-2 h-2 rounded-full ${
                                     i < task.urgency ? "bg-secondary" : "bg-muted"
                                   }`}
                                 />
