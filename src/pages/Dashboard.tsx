@@ -31,7 +31,8 @@ const Dashboard = () => {
       const response = await fetch("https://voqhuievpxdygxpdijxp.supabase.co/functions/v1/generate-schedule", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": "Bearer sb_publishable_Q0SMRph_L548lQd1nO9PMg_UQzl5UDK"
         },
         body: JSON.stringify({ test: true }),
       });
