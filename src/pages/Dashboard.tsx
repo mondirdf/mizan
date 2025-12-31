@@ -28,12 +28,12 @@ const Dashboard = () => {
     setIsLoading(true);
     setTestResponse(null);
     try {
-      const response = await fetch("https://voqhuievpxdygxpdijxp.supabase.co/functions/v1/generate-schedule", {
+      const response = await fetch("https://voqhuievpxdygxpdijxp.supabase.co/functions/v1/bright-worker", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer sb_publishable_QOSMRph_L548IQd1nO9PMg_UQz15UDK",
-          "apikey": "sb_publishable_QOSMRph_L548IQd1nO9PMg_UQz15UDK",
+          "Authorization": "Bearer sb_publishable_QOSMRph_L548IQd1n09PMg_UQz15UDK",
+          "apikey": "sb_publishable_QOSMRph_L548IQd1n09PMg_UQz15UDK",
         },
         body: JSON.stringify({ test: true }),
       });
