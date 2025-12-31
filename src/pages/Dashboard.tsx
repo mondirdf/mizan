@@ -33,6 +33,7 @@ const Dashboard = () => {
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer sb_publishable_QOSMRph_L548IQd1nO9PMg_UQz15UDK",
+          "apikey": "sb_publishable_QOSMRph_L548IQd1nO9PMg_UQz15UDK",
         },
         body: JSON.stringify({ test: true }),
       });
