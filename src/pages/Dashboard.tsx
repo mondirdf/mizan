@@ -4,7 +4,7 @@ import { Timer, Edit3, Download, Calendar, CheckCircle2, Loader2 } from "lucide-
 import { useNavigate } from "react-router-dom";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
-import { SUPABASE_ANON_KEY } from "@/config/supabase";
+
 
 const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 
@@ -32,7 +32,7 @@ const Dashboard = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Authorization": "Bearer sb_publishable_QOSMRph_L548IQd1nO9PMg_UQz15UDK",
         },
         body: JSON.stringify({ test: true }),
       });
