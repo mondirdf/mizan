@@ -4,7 +4,6 @@ import { Timer, Edit3, Download, Calendar, CheckCircle2, Loader2 } from "lucide-
 import { useNavigate } from "react-router-dom";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
-import { callEdgeFunction } from "@/config/supabase";
 
 const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 
@@ -28,8 +27,15 @@ const Dashboard = () => {
     setIsLoading(true);
     setTestResponse(null);
     try {
-      const response = await callEdgeFunction("generate-schedule", { test: true });
-      setTestResponse(JSON.stringify(response, null, 2));
+      const response = await fetch("https://voqhuievpxdygxpdijxp.supabase.co/functions/v1/generate-schedule", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ test: true }),
+      });
+      const data = await response.json();
+      setTestResponse(JSON.stringify(data, null, 2));
     } catch (error) {
       setTestResponse(JSON.stringify({ error: String(error) }, null, 2));
     } finally {
