@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Timer, Edit3, Download, Calendar, CheckCircle2, Loader2 } from "lucide-react";
+import { Timer, Edit3, Download, Calendar, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
-
 
 const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 
@@ -21,29 +19,7 @@ const mockSchedule = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [testResponse, setTestResponse] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleTestConnection = async () => {
-    setIsLoading(true);
-    setTestResponse(null);
-    try {
-      const response = await fetch("https://voqhuievpxdygxpdijxp.supabase.co/functions/v1/generate-schedule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer sb_publishable_Q0SMRph_L548lQd1nO9PMg_UQzl5UDK"
-        },
-        body: JSON.stringify({ test: true }),
-      });
-      const data = await response.json();
-      setTestResponse(JSON.stringify(data, null, 2));
-    } catch (error) {
-      setTestResponse(JSON.stringify({ error: String(error) }, null, 2));
-    } finally {
-      setIsLoading(false);
-    }
-  };
   return (
     <PageTransition>
       <div className="min-h-screen px-4 pt-6 pb-28">
@@ -59,34 +35,6 @@ const Dashboard = () => {
           </motion.div>
 
           {/* Quick actions */}
-          {/* Test Connection Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="mb-4"
-          >
-            <button
-              onClick={handleTestConnection}
-              disabled={isLoading}
-              className="w-full glass-card rounded-2xl p-4 text-center hover:scale-[1.01] transition-transform border-2 border-dashed border-primary/30 bg-primary/5"
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-              ) : (
-                <span className="font-medium text-primary">اختبار الاتصال</span>
-              )}
-            </button>
-            
-            {testResponse && (
-              <div className="mt-3 p-4 rounded-xl bg-muted/50 overflow-x-auto">
-                <pre className="text-xs text-right whitespace-pre-wrap font-mono" dir="ltr">
-                  {testResponse}
-                </pre>
-              </div>
-            )}
-          </motion.div>
-
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
