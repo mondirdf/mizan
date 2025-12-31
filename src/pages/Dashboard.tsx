@@ -28,7 +28,7 @@ const Dashboard = () => {
     setIsLoading(true);
     setTestResponse(null);
     try {
-      const response = await callEdgeFunction("generate-week-plan", { test: true });
+      const response = await callEdgeFunction("generate-schedule", { test: true });
       setTestResponse(JSON.stringify(response, null, 2));
     } catch (error) {
       setTestResponse(JSON.stringify({ error: String(error) }, null, 2));
