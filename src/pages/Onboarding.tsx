@@ -78,7 +78,12 @@ const Onboarding = () => {
     setTasks(tasks.filter((t) => t.id !== id));
   };
 
-  const hourOptions = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 15, 20];
+  const hourOptions = [
+    // From 1 to 5: every 0.5 hours
+    1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5,
+    // From 6 to 50: every 1 hour
+    ...Array.from({ length: 45 }, (_, i) => i + 6)
+  ];
 
   return (
     <PageTransition>
@@ -270,28 +275,28 @@ const Onboarding = () => {
                         الساعات التقديرية
                       </label>
                       <div className="relative">
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                        <div className="flex gap-2 overflow-x-auto pb-3 pt-1 px-1 scrollbar-hide scroll-smooth snap-x snap-mandatory">
                           {hourOptions.map((h) => (
                             <motion.button
                               key={h}
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => setNewTask({ ...newTask, hours: h })}
-                              className={`flex-shrink-0 w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all duration-200 ${
+                              className={`flex-shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-all duration-200 snap-center ${
                                 newTask.hours === h
-                                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110"
                                   : "bg-muted/50 text-muted-foreground hover:bg-muted"
                               }`}
                             >
-                              <span className="text-lg font-bold">{h}</span>
-                              <span className="text-[10px]">ساعة</span>
+                              <span className="text-base font-bold">{h}</span>
                             </motion.button>
                           ))}
                         </div>
                         {/* Fade edges */}
-                        <div className="absolute left-0 top-0 bottom-2 w-8 bg-gradient-to-l from-transparent to-card pointer-events-none" />
-                        <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-r from-transparent to-card pointer-events-none" />
+                        <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-l from-transparent to-card pointer-events-none" />
+                        <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-r from-transparent to-card pointer-events-none" />
                       </div>
+                      <p className="text-xs text-muted-foreground text-center mt-2">اسحب لاختيار الساعات</p>
                     </div>
 
                     {/* Urgency selector - 5 dots */}
