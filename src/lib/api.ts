@@ -2,20 +2,33 @@ const SUPABASE_URL = 'https://voqhuievpxdygxpdijxp.supabase.co/functions/v1'
 const ANON_KEY = 'sb_publishable_Q0SMRph_L548lQd1nO9PMg_UQzl5UDK'
 
 async function callAPI(endpoint: string, body: any) {
-  const response = await fetch(`${SUPABASE_URL}/${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${ANON_KEY}`
-    },
-    body: JSON.stringify(body)
-  })
+  console.log(`[API] Calling ${endpoint} with:`, body);
   
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`)
+  try {
+    const response = await fetch(`${SUPABASE_URL}/${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ANON_KEY}`
+      },
+      body: JSON.stringify(body)
+    });
+    
+    console.log(`[API] Response status: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[API] Error response:`, errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[API] Success:`, data);
+    return data;
+  } catch (error) {
+    console.error(`[API] Fetch failed:`, error);
+    throw error;
   }
-  
-  return response.json()
 }
 
 export const api = {
