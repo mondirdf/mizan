@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,13 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    const { user_id, session_id, actual_minutes, focus_rating, note } = await req.json();
+    const { user_id, session_id, actual_minutes, focus_rating, note, task_id } = await req.json();
     
-    console.log('log_pomodoro called with:', { user_id, session_id, actual_minutes, focus_rating, note });
+    console.log('log_pomodoro called with:', { user_id, session_id, actual_minutes, focus_rating, note, task_id });
 
-    if (!user_id || !session_id) {
+    if (!user_id) {
       return new Response(
-        JSON.stringify({ error: 'user_id and session_id are required' }),
+        JSON.stringify({ error: 'user_id is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -36,21 +37,34 @@ serve(async (req) => {
       );
     }
 
-    // In production, save to database here
-    console.log('Pomodoro session logged successfully');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+      .from('pomodoro_sessions')
+      .insert({
+        user_id,
+        task_id: task_id || null,
+        actual_minutes,
+        focus_rating,
+        note: note || null
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error inserting pomodoro session:', error);
+      throw error;
+    }
+
+    console.log('Pomodoro session logged successfully:', data);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'تم حفظ الجلسة بنجاح',
-        data: {
-          user_id,
-          session_id,
-          actual_minutes,
-          focus_rating,
-          note: note || null,
-          logged_at: new Date().toISOString()
-        }
+        data
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
