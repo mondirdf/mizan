@@ -18,6 +18,9 @@ interface Task {
 
 type SlotMode = "unavailable" | "preferred";
 
+// للاختبار فقط: user_id ثابت
+const TEST_USER_ID = "test-user-0001";
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -38,6 +41,9 @@ const Onboarding = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.user?.id) {
         setUserId(sessionData.session.user.id);
+      } else {
+        // للاختبار فقط: استخدم user_id ثابت
+        setUserId(TEST_USER_ID);
       }
     };
     getSession();

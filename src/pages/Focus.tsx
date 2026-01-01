@@ -7,6 +7,9 @@ import BottomNav from "@/components/layout/BottomNav";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
+// للاختبار فقط: user_id ثابت
+const TEST_USER_ID = "test-user-0001";
+
 const Focus = () => {
   const navigate = useNavigate();
   const [isRunning, setIsRunning] = useState(false);
@@ -26,6 +29,9 @@ const Focus = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.user?.id) {
         setUserId(sessionData.session.user.id);
+      } else {
+        // للاختبار فقط: استخدم user_id ثابت
+        setUserId(TEST_USER_ID);
       }
     };
     getSession();

@@ -37,6 +37,9 @@ interface DashboardData {
   schedule: typeof mockSchedule;
 }
 
+// للاختبار فقط: user_id ثابت
+const TEST_USER_ID = "test-user-0001";
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -50,6 +53,9 @@ const Dashboard = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.user?.id) {
         setUserId(sessionData.session.user.id);
+      } else {
+        // للاختبار فقط: استخدم user_id ثابت
+        setUserId(TEST_USER_ID);
       }
     };
     getSession();

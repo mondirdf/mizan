@@ -14,6 +14,9 @@ interface ReflectData {
   ai_message: string;
 }
 
+// للاختبار فقط: user_id ثابت
+const TEST_USER_ID = "test-user-0001";
+
 const Reflect = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,6 +28,9 @@ const Reflect = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.user?.id) {
         setUserId(sessionData.session.user.id);
+      } else {
+        // للاختبار فقط: استخدم user_id ثابت
+        setUserId(TEST_USER_ID);
       }
     };
     getSession();
