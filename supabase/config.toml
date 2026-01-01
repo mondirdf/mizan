@@ -1,0 +1,16 @@
+project_id = "voqhuievpxdygxpdijxp"
+
+[functions.generate_schedule]
+verify_jwt = false
+
+[functions.log_pomodoro]
+verify_jwt = false
+
+[functions.log_manual_progress]
+verify_jwt = false
+
+[functions.get_dashboard_data]
+verify_jwt = false
+
+[functions.weekly_reflect]
+verify_jwt = false
