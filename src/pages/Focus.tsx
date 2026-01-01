@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
 import { api } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 const Focus = () => {
   const navigate = useNavigate();
@@ -17,7 +18,18 @@ const Focus = () => {
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [actualMinutes, setActualMinutes] = useState(0);
+  const [user_id, setUserId] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.user?.id) {
+        setUserId(sessionData.session.user.id);
+      }
+    };
+    getSession();
+  }, []);
 
   const formatTime = (min: number, sec: number) => {
     return `${min.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
@@ -80,10 +92,12 @@ const Focus = () => {
       return;
     }
 
+    if (!user_id) return;
+
     setSaving(true);
     try {
       await api.logPomodoro({
-        user_id: "demo-user-123",
+        user_id: user_id,
         session_id: `session-${Date.now()}`,
         actual_minutes: actualMinutes,
         focus_rating: focusRating,

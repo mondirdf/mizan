@@ -4,7 +4,9 @@ import { Timer, Edit3, Download, Calendar, CheckCircle2, Loader2, RefreshCw } fr
 import { useNavigate } from "react-router-dom";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
+import ManualProgressModal from "@/components/ManualProgressModal";
 import { api } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 
@@ -18,6 +20,12 @@ const mockSchedule = [
   { day: 3, hour: 11, task: "مراجعة الرياضيات", duration: 2, color: "secondary" },
   { day: 4, hour: 9, task: "قراءة الفصل السادس", duration: 1.5, color: "primary" },
   { day: 5, hour: 10, task: "تحضير العرض", duration: 2, color: "secondary" },
+];
+
+const mockTasks = [
+  { id: "task-1", name: "مراجعة الرياضيات" },
+  { id: "task-2", name: "قراءة الفصل الخامس" },
+  { id: "task-3", name: "حل تمارين الفيزياء" },
 ];
 
 interface DashboardData {
@@ -34,13 +42,26 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState<DashboardData | null>(null);
+  const [user_id, setUserId] = useState<string | null>(null);
+  const [showManualModal, setShowManualModal] = useState(false);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.user?.id) {
+        setUserId(sessionData.session.user.id);
+      }
+    };
+    getSession();
+  }, []);
 
   const fetchDashboard = async () => {
+    if (!user_id) return;
+    
     setLoading(true);
     setError("");
     try {
       const today = new Date().toISOString().split("T")[0];
-      const user_id = "demo-user-123";
       const result = await api.getDashboard(user_id, today);
       setData(result);
     } catch (e) {
@@ -57,8 +78,10 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchDashboard();
-  }, []);
+    if (user_id) {
+      fetchDashboard();
+    }
+  }, [user_id]);
 
   const schedule = data?.schedule || mockSchedule;
   const todayTasks = data?.today_sessions || mockSchedule.filter(s => s.day === 0);
@@ -148,7 +171,10 @@ const Dashboard = () => {
                   </div>
                   <span className="text-sm font-medium">جلسة تركيز</span>
                 </button>
-                <button className="glass-card rounded-2xl p-4 text-center hover:scale-[1.02] transition-transform">
+                <button
+                  onClick={() => setShowManualModal(true)}
+                  className="glass-card rounded-2xl p-4 text-center hover:scale-[1.02] transition-transform"
+                >
                   <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center mx-auto mb-2">
                     <Edit3 className="w-5 h-5 text-secondary" />
                   </div>
@@ -270,6 +296,16 @@ const Dashboard = () => {
         </div>
       </div>
       <BottomNav />
+      
+      {/* Manual Progress Modal */}
+      {user_id && (
+        <ManualProgressModal
+          isOpen={showManualModal}
+          onClose={() => setShowManualModal(false)}
+          user_id={user_id}
+          tasks={mockTasks}
+        />
+      )}
     </PageTransition>
   );
 };

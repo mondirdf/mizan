@@ -1,9 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Moon, Sun, Plus, Trash2, Clock, AlertCircle, Calendar, Ban, ThumbsDown, Loader2 } from "lucide-react";
 import PageTransition from "@/components/layout/PageTransition";
 import { api } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+
 const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 
 interface Task {
@@ -29,6 +31,17 @@ const Onboarding = () => {
   const [newTask, setNewTask] = useState({ name: "", hours: 2, urgency: 3, deadline: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [user_id, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.user?.id) {
+        setUserId(sessionData.session.user.id);
+      }
+    };
+    getSession();
+  }, []);
 
   // Calculate hours based on sleep/wake times
   const { hours, sleepHours } = useMemo(() => {
@@ -435,11 +448,10 @@ const Onboarding = () => {
                 if (step < 2) {
                   setStep(step + 1);
                 } else {
+                  if (!user_id) return;
                   setLoading(true);
                   setError("");
                   try {
-                    // Use a mock user_id for now
-                    const user_id = "demo-user-123";
                     await api.generateSchedule(user_id);
                     navigate("/dashboard");
                   } catch (e) {
