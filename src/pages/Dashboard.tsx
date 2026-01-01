@@ -256,11 +256,17 @@ const Dashboard = () => {
                 
                 <div className="overflow-x-auto -mx-2 px-2">
                   <div className="min-w-[700px] grid grid-cols-7 gap-2">
-                    {days.map((day, dayIndex) => (
+                    {days.map((day, dayIndex) => {
+                      // Convert JS day (Sun=0) to Arabic week day (Sat=0)
+                      const jsDay = new Date().getDay();
+                      const arabicToday = jsDay === 6 ? 0 : jsDay + 1;
+                      const isToday = dayIndex === arabicToday;
+                      
+                      return (
                       <div key={day} className="space-y-2">
                         <div className="text-center py-2">
                           <span className={`text-sm font-medium ${
-                            dayIndex === new Date().getDay() ? "text-primary" : "text-muted-foreground"
+                            isToday ? "text-primary" : "text-muted-foreground"
                           }`}>
                             {day}
                           </span>
@@ -293,7 +299,8 @@ const Dashboard = () => {
                           )}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
