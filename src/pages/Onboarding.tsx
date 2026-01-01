@@ -445,31 +445,22 @@ const Onboarding = () => {
             )}
             <button
               onClick={async () => {
-                onClick={async () => {
-  // الانتقال بين الخطوتين
-  if (step < 2) {
-    setStep(step + 1);
-    return;
-  }
+                                  if (step < 2) {
+                  setStep(step + 1);
+                } else {
+                  if (!user_id) return;
+                  setLoading(true);
+                  setError("");
+                  try {
+                    await api.generateSchedule(user_id);
+                    navigate("/dashboard");
+                  } catch (e) {
+                    setError("فشل إنشاء الجدول، حاول مرة أخرى");
+                  } finally {
+                    setLoading(false);
+                  }
+                }
 
-  // التحقق من تسجيل الدخول
-  if (!user_id) {
-    setError("يجب تسجيل الدخول أولاً");
-    return;
-  }
-
-  setLoading(true);
-  setError("");
-
-  try {
-    await api.generateSchedule(user_id);
-    navigate("/dashboard");
-  } catch (e) {
-    setError("فشل إنشاء الجدول");
-  } finally {
-    setLoading(false);
-  }
-}}
               }}
               disabled={loading}
               className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
