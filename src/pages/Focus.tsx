@@ -1,20 +1,116 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Play, Pause, Square, RotateCcw, Coffee } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Pause, Square, RotateCcw, Coffee, Loader2, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import PageTransition from "@/components/layout/PageTransition";
 import BottomNav from "@/components/layout/BottomNav";
+import { api } from "@/lib/api";
 
 const Focus = () => {
+  const navigate = useNavigate();
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [focusRating, setFocusRating] = useState(0);
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [actualMinutes, setActualMinutes] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const formatTime = (min: number, sec: number) => {
     return `${min.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const progress = ((25 * 60 - (minutes * 60 + seconds)) / (25 * 60)) * 100;
+  const totalSeconds = 25 * 60;
+  const currentSeconds = minutes * 60 + seconds;
+  const progress = ((totalSeconds - currentSeconds) / totalSeconds) * 100;
+
+  // Timer logic
+  useEffect(() => {
+    if (isRunning && !isPaused) {
+      intervalRef.current = setInterval(() => {
+        setSeconds((prevSec) => {
+          if (prevSec === 0) {
+            if (minutes === 0) {
+              // Timer finished
+              clearInterval(intervalRef.current!);
+              setIsRunning(false);
+              setActualMinutes(25);
+              setShowRatingModal(true);
+              return 0;
+            }
+            setMinutes((prevMin) => prevMin - 1);
+            return 59;
+          }
+          return prevSec - 1;
+        });
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [isRunning, isPaused, minutes]);
+
+  const handleStop = () => {
+    const elapsedMinutes = 25 - minutes - (seconds > 0 ? 0 : 1);
+    setActualMinutes(Math.max(1, elapsedMinutes));
+    setIsRunning(false);
+    setIsPaused(false);
+    setShowRatingModal(true);
+  };
+
+  const handleReset = () => {
+    setIsRunning(false);
+    setIsPaused(false);
+    setMinutes(25);
+    setSeconds(0);
+  };
+
+  const handleSaveSession = async () => {
+    if (!focusRating) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await api.logPomodoro({
+        user_id: "demo-user-123",
+        session_id: `session-${Date.now()}`,
+        actual_minutes: actualMinutes,
+        focus_rating: focusRating,
+        note: note || undefined,
+      });
+      
+      // Reset everything
+      setShowRatingModal(false);
+      setFocusRating(0);
+      setNote("");
+      setMinutes(25);
+      setSeconds(0);
+      navigate("/dashboard");
+    } catch (e) {
+      alert("فشل حفظ الجلسة");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowRatingModal(false);
+    setFocusRating(0);
+    setNote("");
+    setMinutes(25);
+    setSeconds(0);
+  };
 
   return (
     <PageTransition>
@@ -142,12 +238,7 @@ const Focus = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setIsRunning(false);
-                    setIsPaused(false);
-                    setMinutes(25);
-                    setSeconds(0);
-                  }}
+                  onClick={handleReset}
                   className="btn-secondary w-14 h-14 rounded-2xl flex items-center justify-center"
                 >
                   <RotateCcw className="w-5 h-5" />
@@ -155,12 +246,7 @@ const Focus = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    setIsRunning(false);
-                    setIsPaused(false);
-                    setMinutes(25);
-                    setSeconds(0);
-                  }}
+                  onClick={handleStop}
                   className="w-14 h-14 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive/20 transition-colors"
                 >
                   <Square className="w-5 h-5" />
@@ -170,6 +256,91 @@ const Focus = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Rating Modal */}
+      <AnimatePresence>
+        {showRatingModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card rounded-3xl p-6 w-full max-w-sm"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold">كيف كان تركيزك؟</h3>
+                <button
+                  onClick={handleCloseModal}
+                  className="p-2 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <X className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+
+              {/* Rating dots */}
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <span className="text-xs text-muted-foreground">ضعيف</span>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <motion.button
+                      key={rating}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setFocusRating(rating)}
+                      className={`w-10 h-10 rounded-full transition-all duration-200 ${
+                        focusRating >= rating
+                          ? "bg-primary shadow-lg shadow-primary/30"
+                          : "bg-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground">ممتاز</span>
+              </div>
+
+              {/* Note */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium mb-2">ملاحظة (اختياري)</label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="ماذا أنجزت؟ أي ملاحظات؟"
+                  className="input-glass w-full h-24 resize-none"
+                />
+              </div>
+
+              {/* Info */}
+              <div className="mb-6 p-3 rounded-xl bg-muted/50 text-center">
+                <p className="text-sm text-muted-foreground">
+                  الوقت المنجز: <span className="font-semibold text-foreground">{actualMinutes} دقيقة</span>
+                </p>
+              </div>
+
+              {/* Save button */}
+              <button
+                onClick={handleSaveSession}
+                disabled={saving || !focusRating}
+                className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  "حفظ الجلسة"
+                )}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <BottomNav />
     </PageTransition>
   );
