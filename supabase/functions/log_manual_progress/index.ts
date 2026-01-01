@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,21 +37,34 @@ serve(async (req) => {
       );
     }
 
-    // In production, save to database here
-    console.log('Manual progress logged successfully');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+      .from('manual_progress')
+      .insert({
+        user_id,
+        task_id,
+        minutes,
+        focus_rating,
+        note: note || null
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error inserting manual progress:', error);
+      throw error;
+    }
+
+    console.log('Manual progress logged successfully:', data);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'تم تسجيل التقدم بنجاح',
-        data: {
-          user_id,
-          task_id,
-          minutes,
-          focus_rating,
-          note: note || null,
-          logged_at: new Date().toISOString()
-        }
+        data
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
