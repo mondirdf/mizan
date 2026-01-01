@@ -445,7 +445,7 @@ const Onboarding = () => {
             )}
             <button
               onClick={async () => {
-                                  if (step < 2) {
+                if (step < 2) {
                   setStep(step + 1);
                 } else {
                   if (!user_id) return;
@@ -460,7 +460,6 @@ const Onboarding = () => {
                     setLoading(false);
                   }
                 }
-
               }}
               disabled={loading}
               className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
