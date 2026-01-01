@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Moon, Sun, Plus, Trash2, Clock, AlertCircle, Calendar, Ban, ThumbsDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Sun, Plus, Trash2, Clock, AlertCircle, Calendar, Ban, ThumbsDown, Loader2 } from "lucide-react";
 import PageTransition from "@/components/layout/PageTransition";
-
+import { api } from "@/lib/api";
 const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
 
 interface Task {
@@ -27,6 +27,8 @@ const Onboarding = () => {
     { id: 1, name: "مراجعة الرياضيات", hours: 3, urgency: 4, deadline: "" },
   ]);
   const [newTask, setNewTask] = useState({ name: "", hours: 2, urgency: 3, deadline: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   // Calculate hours based on sleep/wake times
   const { hours, sleepHours } = useMemo(() => {
@@ -405,25 +407,57 @@ const Onboarding = () => {
             )}
           </AnimatePresence>
 
+          {/* Error message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-center"
+            >
+              {error}
+            </motion.div>
+          )}
+
           {/* Navigation buttons */}
           <div className="flex gap-4">
             {step > 1 && (
               <button
                 onClick={() => setStep(step - 1)}
-                className="btn-secondary flex items-center gap-2"
+                disabled={loading}
+                className="btn-secondary flex items-center gap-2 disabled:opacity-50"
               >
                 <ChevronRight className="w-5 h-5" />
                 السابق
               </button>
             )}
             <button
-              onClick={() => {
-                if (step < 2) setStep(step + 1);
-                else navigate("/dashboard");
+              onClick={async () => {
+                if (step < 2) {
+                  setStep(step + 1);
+                } else {
+                  setLoading(true);
+                  setError("");
+                  try {
+                    // Use a mock user_id for now
+                    const user_id = "demo-user-123";
+                    await api.generateSchedule(user_id);
+                    navigate("/dashboard");
+                  } catch (e) {
+                    setError("فشل إنشاء الجدول، حاول مرة أخرى");
+                  } finally {
+                    setLoading(false);
+                  }
+                }
               }}
-              className="flex-1 btn-primary flex items-center justify-center gap-2"
+              disabled={loading}
+              className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {step < 2 ? (
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  جاري الإنشاء...
+                </>
+              ) : step < 2 ? (
                 <>
                   التالي
                   <ChevronLeft className="w-5 h-5" />
